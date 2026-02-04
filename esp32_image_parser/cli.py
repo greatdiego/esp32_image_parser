@@ -240,7 +240,7 @@ def main():
         help='Action to take'
     )
     arg_parser.add_argument('input', help='Firmware image input file')
-    arg_parser.add_argument('-output', help='Output file name')
+    arg_parser.add_argument('--output', '-o', help='Output file name')
     arg_parser.add_argument(
         '-nvs_output_type',
         help='output type for nvs dump',
@@ -248,12 +248,15 @@ def main():
         choices=["text", "json"],
         default="text"
     )
-    arg_parser.add_argument('-partition', '-p', help='Partition name (e.g. ota_0)')
-    arg_parser.add_argument('--partition-offset',
+    arg_parser.add_argument('--partition', '-p', help='Partition name (e.g. ota_0)')
+    arg_parser.add_argument('--partition-table-offset', '-pto',
                             default=0x8000,
                             help='Partition offset in hex (default 0x8000)',
                             type=lambda x: int(x, 0))
-    arg_parser.add_argument('-v', default=False, help='Verbose output', action='store_true')
+    arg_parser.add_argument('--verbose', '-v',
+                            default=False,
+                            help='Verbose output',
+                            action='store_true')
 
     args = arg_parser.parse_args()
 
