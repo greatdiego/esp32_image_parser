@@ -1,10 +1,9 @@
 import os
 import struct
 import base64
-import binascii
 from hexdump import hexdump
 
-nvs_types =  {
+nvs_types = {
   0x01: "U8",
   0x11: "I8",
   0x02: "U16",
@@ -27,14 +26,15 @@ entry_state_descs = {
 }
 
 nvs_sector_states = {
-        0xFFFFFFFF : "EMPTY",
-        0xFFFFFFFE : "ACTIVE",
-        0xFFFFFFFC : "FULL",
-        0xFFFFFFF8 : "FREEING",
-        0xFFFFFFF0 : "CORRUPT"
+    0xFFFFFFFF: "EMPTY",
+    0xFFFFFFFE: "ACTIVE",
+    0xFFFFFFFC: "FULL",
+    0xFFFFFFF8: "FREEING",
+    0xFFFFFFF0: "CORRUPT"
 }
 
 namespaces = {}
+
 
 def parse_nvs_entries(entries, entry_state_bitmap):
     entries_out = []
@@ -46,8 +46,7 @@ def parse_nvs_entries(entries, entry_state_bitmap):
         entry_data["entry_state"] = entry_state_descs[int(entry_state_bitmap[i])]
 
         entry = entries[i]
-        state = entry_state_bitmap[i]
-    
+
         entry_ns = entry[0]
         entry_type = entry[1]
         entry_span = entry[2]
@@ -56,17 +55,17 @@ def parse_nvs_entries(entries, entry_state_bitmap):
         key = entry[8:24]
 
         data = entry[24:]
-        if(entry_type == 0):
+        if entry_type == 0:
             i += 1
             continue
 
-        if(nvs_types[entry_type] == "ANY"):
+        if nvs_types[entry_type] == "ANY":
             i += 1
             continue
 
         decoded_key = ''
         for c in key:
-            if(c == 0):
+            if c == 0:
                 break
             decoded_key += chr(c)
 
@@ -76,7 +75,7 @@ def parse_nvs_entries(entries, entry_state_bitmap):
         print("      NS Index : %d" % (entry_ns))
         entry_data["entry_ns_index"] = entry_ns
 
-        if(entry_ns != 0 and entry_ns in namespaces):
+        if entry_ns != 0 and entry_ns in namespaces:
             print("          NS : %s" % (namespaces[entry_ns]))
             entry_data["entry_ns"] = namespaces[entry_ns]
 
@@ -89,52 +88,51 @@ def parse_nvs_entries(entries, entry_state_bitmap):
         entry_data["entry_chunk_index"] = chunk_index
         entry_data["entry_key"] = key
 
-
-        if(nvs_types[entry_type] == "U8"):
+        if nvs_types[entry_type] == "U8":
             data = struct.unpack("<B", data[0:1])[0]
             print("      Data (U8) : %d" % (data))
-            if(entry_ns == 0):
+            if entry_ns == 0:
                 namespaces[data] = key
             entry_data["entry_data_type"] = "U8"
             entry_data["entry_data"] = data
 
-        elif(nvs_types[entry_type] == "I8"):
+        elif nvs_types[entry_type] == "I8":
             data = struct.unpack("<b", data[0:1])[0]
             print("      Data (I8) : %d" % (data))
             entry_data["entry_data_type"] = "I8"
             entry_data["entry_data"] = data
 
-        elif(nvs_types[entry_type] == "U16"):
+        elif nvs_types[entry_type] == "U16":
             data = struct.unpack("<H", data[0:2])[0]
             print("      Data (U16) : %d" % (data))
             entry_data["entry_data_type"] = "U16"
             entry_data["entry_data"] = data
-        
-        elif(nvs_types[entry_type] == "I16"):
+
+        elif nvs_types[entry_type] == "I16":
             data = struct.unpack("<h", data[0:2])[0]
             print("      Data (I16) : %d" % (data))
             entry_data["entry_data_type"] = "I16"
             entry_data["entry_data"] = data
 
-        elif(nvs_types[entry_type] == "U32"):
+        elif nvs_types[entry_type] == "U32":
             data = struct.unpack("<I", data[0:4])[0]
             print("      Data (U32) : %d" % (data))
             entry_data["entry_data_type"] = "U32"
             entry_data["entry_data"] = data
-        
-        elif(nvs_types[entry_type] == "I32"):
+
+        elif nvs_types[entry_type] == "I32":
             data = struct.unpack("<i", data[0:4])[0]
             print("      Data (I32) : %d" % (data))
             entry_data["entry_data_type"] = "I32"
             entry_data["entry_data"] = data
 
-        elif(nvs_types[entry_type] == "STR"):
+        elif nvs_types[entry_type] == "STR":
             str_size = struct.unpack("<H", data[0:2])[0]
             print("      String :")
             entry_data["entry_data_type"] = "STR"
             print("        Size : %d " % (str_size))
             entry_data["entry_data_size"] = str_size
-            data = b'' 
+            data = b''
             for x in range(1, entry_span):
                 i += 1
                 data += entries[i]
@@ -142,13 +140,13 @@ def parse_nvs_entries(entries, entry_state_bitmap):
             print("        Data : %s" % (data))
             entry_data["entry_data"] = str(data)
 
-        elif(nvs_types[entry_type] == "BLOB_DATA"):
+        elif nvs_types[entry_type] == "BLOB_DATA":
             blob_data_size = struct.unpack("<H", data[0:2])[0]
             print("      Blob Data :")
             entry_data["entry_data_type"] = "BLOB_DATA"
             print("        Size : %d " % (blob_data_size))
             entry_data["entry_data_size"] = blob_data_size
-            data = b'' 
+            data = b''
             for x in range(1, entry_span):
                 i += 1
                 data += entries[i]
@@ -156,13 +154,13 @@ def parse_nvs_entries(entries, entry_state_bitmap):
             hexdump(data[:blob_data_size])
             entry_data["entry_data"] = base64.b64encode(data[:blob_data_size]).decode('ascii')
 
-        elif(nvs_types[entry_type] == "BLOB"):
+        elif nvs_types[entry_type] == "BLOB":
             blob_size = struct.unpack("<H", data[0:2])[0]
             print("      Data (Blob) :")
             entry_data["entry_data_type"] = "BLOB"
             print("        Size : %d " % (blob_size))
             entry_data["entry_data_size"] = blob_size
-            data = b'' 
+            data = b''
             for x in range(1, entry_span):
                 i += 1
                 data += entries[i]
@@ -170,7 +168,7 @@ def parse_nvs_entries(entries, entry_state_bitmap):
             hexdump(data[:blob_size])
             entry_data["entry_data"] = base64.b64encode(data[:blob_size]).decode('ascii')
 
-        elif(nvs_types[entry_type] == "BLOB_IDX"):
+        elif nvs_types[entry_type] == "BLOB_IDX":
             idx_size = struct.unpack("<I", data[0:4])[0]
             chunk_count = struct.unpack("<B", data[5:6])[0]
             chunk_start = struct.unpack("<B", data[6:7])[0]
@@ -192,6 +190,7 @@ def parse_nvs_entries(entries, entry_state_bitmap):
         print("")
     return entries_out
 
+
 def read_nvs_pages(fh):
     pages = []
     fh.seek(0, os.SEEK_END)
@@ -199,7 +198,7 @@ def read_nvs_pages(fh):
 
     sector_pos = 0
     x = 0
-    while(sector_pos < file_len):
+    while sector_pos < file_len:
         page_data = {}
 
         fh.seek(sector_pos)
@@ -211,12 +210,12 @@ def read_nvs_pages(fh):
         print("  page state : %s" % (page_state))
         print("  page seq no. : %d" % (seq_no))
         print("  page version : %d" % (version))
-       
+
         page_data["page_state"] = page_state
         page_data["page_seq_no"] = seq_no
         page_data["page_version"] = version
 
-        fh.read(19) # unused
+        fh.read(19)  # unused
 
         crc_32 = struct.unpack("<I", fh.read(4))[0]
         print("  crc 32 : %d" % (crc_32))
@@ -235,7 +234,7 @@ def read_nvs_pages(fh):
             entry_state_bitmap_decoded = entry_state_bitmap_decoded + str(temp)
 
         print("  page entry state bitmap (decoded) : %s" % (entry_state_bitmap_decoded))
-        page_data["page_entry_state_bitmap"] = entry_state_bitmap_decoded 
+        page_data["page_entry_state_bitmap"] = entry_state_bitmap_decoded
         sector_pos += 4096
         x += 1
 
@@ -256,20 +255,20 @@ def read_nvs_pages(fh):
     print("")
     return pages
 
-#parser = argparse.ArgumentParser()
-#parser.add_argument("nvs_bin_file", help="nvs partition binary file", type=str)
-#parser.add_argument("-output_type", help="output type", type=str, choices=["text", "json"], default="text")
+# parser = argparse.ArgumentParser()
+# parser.add_argument("nvs_bin_file", help="nvs partition binary file", type=str)
+# parser.add_argument("-output_type", help="output type", type=str, choices=["text", "json"], default="text")
 
-#args = parser.parse_args()
+# args = parser.parse_args()
 
-#with open(args.nvs_bin_file, 'rb') as fh:
-#  if(args.output_type != "text"):
-#    sys.stdout = open(os.devnull, 'w') # block print()
+# with open(args.nvs_bin_file, 'rb') as fh:
+#   if(args.output_type != "text"):
+#     sys.stdout = open(os.devnull, 'w') # block print()
 
-#  pages = read_pages(fh)
+#   pages = read_pages(fh)
 
-#  sys.stdout = sys.stdout = sys.__stdout__ # re-enable print()
+#   sys.stdout = sys.stdout = sys.__stdout__ # re-enable print()
 
-#  if(args.output_type == "json"):
-#      print(json.dumps(pages))
+#   if(args.output_type == "json"):
+#       print(json.dumps(pages))
 
