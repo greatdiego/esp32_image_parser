@@ -254,6 +254,7 @@ def main():
                             help='Partition offset in hex (default 0x8000)',
                             type=lambda x: int(x, 0))
     arg_parser.add_argument('--verbose', '-v',
+                            dest='v',
                             default=False,
                             help='Verbose output',
                             action='store_true')
