@@ -219,9 +219,9 @@ def add_elf_symbols(elf):
         )
 
 
-def flash_dump_to_elf(filename, partition):
+def flash_dump_to_elf(filename, partition, partition_offset=0x8000):
     fh = open(filename, 'rb')
-    part_table = read_partition_table(fh)
+    part_table = read_partition_table(fh, offset=partition_offset)
     fh.close()
     return part_table
 
@@ -248,7 +248,11 @@ def main():
         choices=["text", "json"],
         default="text"
     )
-    arg_parser.add_argument('-partition', help='Partition name (e.g. ota_0)')
+    arg_parser.add_argument('-partition', '-p', help='Partition name (e.g. ota_0)')
+    arg_parser.add_argument('--partition-offset',
+                            default=0x8000,
+                            help='Partition offset in hex (default 0x8000)',
+                            type=lambda x: int(x, 0))
     arg_parser.add_argument('-v', default=False, help='Verbose output', action='store_true')
 
     args = arg_parser.parse_args()
@@ -260,7 +264,7 @@ def main():
             verbose = True
 
         # parse that ish
-        part_table = read_partition_table(fh, verbose)
+        part_table = read_partition_table(fh, verbose, offset=args.partition_offset)
 
         if args.action in ['dump_partition', 'create_elf', 'dump_nvs']:
             if args.partition is None:
@@ -272,7 +276,7 @@ def main():
             if args.action == 'dump_partition' and args.output is not None:
                 dump_file = args.output
             else:
-                dump_file = part_name + '_out.bin'
+                dump_file = f"{part_name}.bin"
 
             if part_name in part_table:
                 part = part_table[part_name]
