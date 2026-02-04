@@ -219,9 +219,9 @@ def add_elf_symbols(elf):
         )
 
 
-def flash_dump_to_elf(filename, partition, partition_offset=0x8000):
+def flash_dump_to_elf(filename, partition, partition_table_offset=0x8000):
     fh = open(filename, 'rb')
-    part_table = read_partition_table(fh, offset=partition_offset)
+    part_table = read_partition_table(fh, offset=partition_table_offset)
     fh.close()
     return part_table
 
@@ -267,7 +267,8 @@ def main():
             verbose = True
 
         # parse that ish
-        part_table = read_partition_table(fh, verbose, offset=args.partition_offset)
+        part_table = read_partition_table(
+            fh, verbose, offset=args.partition_table_offset)
 
         if args.action in ['dump_partition', 'create_elf', 'dump_nvs']:
             if args.partition is None:
