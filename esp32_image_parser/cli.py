@@ -14,6 +14,7 @@ from .esp32_firmware_reader import (
 )
 from .read_nvs import read_nvs_pages
 
+from importlib.resources import files
 
 def image_base_name(path):
     filename_w_ext = os.path.basename(path)
@@ -198,7 +199,7 @@ def image2elf(filename, output_file, verbose=False):
 
 def add_elf_symbols(elf):
 
-    fh = open("symbols_dump.txt", "r")
+    fh = (files("esp32_image_parser") / "symbols_dump.txt").open('r')
     lines = fh.readlines()
 
     bind_map = {"LOCAL": STB.STB_LOCAL, "GLOBAL": STB.STB_GLOBAL}
